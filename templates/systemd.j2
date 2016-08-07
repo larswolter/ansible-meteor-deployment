@@ -1,0 +1,21 @@
+[Unit]
+Description=Meteor.js (NodeJS) application
+After=mongodb.service
+
+[Service]
+ExecStart=/usr/local/bin/node {{ deploy_app_dir }}/bundle/main.js
+Restart=always
+SyslogIdentifier={{ site_name }}
+User={{ app_name }}
+Group={{ app_name }}
+Environment=HTTP_FORWARDED_COUNT=1
+Environment=NODE_ENV=production 
+Environment=MONGO_URL={{ mongo_url }}
+Environment=ROOT_URL=https://{{ site_name }}/
+Environment=PORT={{ port }}
+Environment=NODE_TLS_REJECT_UNAUTHORIZED=0
+
+
+[Install]
+WantedBy=multi-user.target
+Alias={{ site_name }}.service

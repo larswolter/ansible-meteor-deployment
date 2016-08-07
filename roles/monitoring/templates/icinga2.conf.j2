@@ -1,0 +1,57 @@
+# configure nginx to use icinga-2
+
+server {
+  listen 80;
+  root /usr/share/icinga2/classicui;
+  index index.php index.html;
+
+  access_log /var/log/nginx/icinga2-classicui-access.log;
+  error_log /var/log/nginx/icinga2-classicui-error.log;
+
+
+  auth_basic "Icinga Access";
+  auth_basic_user_file  /etc/icinga2-classicui/htpasswd.users;
+  location = / {
+      rewrite ^/$ /icinga2-classicui/index.html permanent;
+  }
+  location /icinga2-classicui/stylesheets {
+    alias   /etc/icinga/stylesheets;
+  }
+  location /icinga2-classicui {
+    alias  /usr/share/icinga2/classicui;
+  }
+  location ~ /cgi-bin/(.*)\.cgi$ {
+    root /usr/lib/cgi-bin/icinga2-classicui;
+    rewrite ^/cgi-bin/icinga2-classicui/(.*)\.cgi /$1.cgi break;
+    include /etc/nginx/fastcgi_params;
+    fastcgi_pass  unix:/var/run/fcgiwrap.socket;
+    fastcgi_index index.php;
+    fastcgi_param ICINGA_CGI_CONFIG /etc/icinga2-classicui/cgi.cfg;
+    fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+    fastcgi_param  AUTH_USER          $remote_user;
+    fastcgi_param  REMOTE_USER        $remote_user;
+  }
+  # Security - Basic configuration
+    location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+        expires max;
+    }
+
+    location = /robots.txt {
+        allow all;
+        log_not_found off;
+        access_log off;
+    }
+
+    # Deny access to hidden files
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+    #setup redirect from /icinga2-classicui to /icinga2
+        location /icinga2 {
+               rewrite ^/* /icinga2-classicui last;
+        }
+}

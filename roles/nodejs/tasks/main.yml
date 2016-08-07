@@ -1,0 +1,18 @@
+---
+  - name: update apt packages
+    sudo: yes
+    apt: update_cache=yes cache_valid_time=3600
+
+  - name: install nodejs requirements
+    sudo: yes
+    apt: pkg={{ item }} state=present
+    with_items:
+      - npm
+
+  - name: Install Node installer using npm
+    sudo: yes
+    npm: name=n global=yes state=present
+
+  - name: install nodejs using n
+    sudo: yes
+    shell: n v4.4.7

@@ -1,0 +1,17 @@
+---
+- name: Server based on Ubuntu 16.04 to run bundled Meteor Apps
+  hosts: all
+  sudo: yes
+  pre_tasks:
+    - name: Install python2
+      raw: sudo apt-get -y install python-simplejson python-passlib
+  vars_prompt:
+    - name: "monitoring_password"
+      prompt: "Password for Icinga monitoring"
+      default: "tGaS4BAhgZPwPyKFe"
+  roles: 
+    - common
+    - nginx
+    - mongo
+    - nodejs
+    - monitoring
