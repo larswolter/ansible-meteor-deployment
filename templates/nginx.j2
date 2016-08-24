@@ -8,12 +8,12 @@ upstream {{ nginx_upstream_name }} {
 }
 
 server {
-  listen      443 ssl spdy;
+  listen      443 ssl http2;
   access_log  {{ nginx_server_log_dir }}/nginx.access.log;
   error_log  {{ nginx_server_log_dir }}/nginx.error.log crit;
   
   client_max_body_size 10G;
-  server_name {{ app_name }};
+  server_name {{ site_name }};
 
   ssl on;
   ssl_certificate {{ nginx_ssl_cert }};

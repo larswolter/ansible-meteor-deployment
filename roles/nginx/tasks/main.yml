@@ -1,35 +1,39 @@
 ---
   - name: update apt-get
-    sudo: yes
+    become: true
     apt: update_cache=yes cache_valid_time=3600  
+    tags:
+      - packages
 
   - name: install nginx
-    sudo: yes
+    become: true
     apt: pkg=nginx state=present
+    tags:
+      - packages
 
   - name: copy nginx.conf
-    sudo: yes
+    become: true
     template: src=nginx.conf.j2 dest=/etc/nginx/nginx.conf owner=root group=root
     tags: 
       - nginx
 
   - name: setup nginx host file dirs
-    sudo: yes
+    become: true
     file: name="/etc/nginx/{{ item }}" state=directory owner=root group=root
     with_items:
       - sites-available
       - sites-enabled
 
   - name: generate diffie hellmann parameter
-    sudo: yes
+    become: true
     command: openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048 creates=/etc/ssl/certs/dhparam.pem
 
-  - name: ensure default nginx has been deleted
-    sudo: yes
-    file: dest=/etc/nginx/sites-enabled/default state=absent
+  - name: ensure nginx sites have been deleted
+    become: true
+    shell: rm -rf /etc/nginx/sites-enabled/*
 
   - name: restart nginx
-    sudo: yes
-    service: name=nginx state=restarted enabled=yes
+    become: true
+    service: name=nginx state=reloaded enabled=yes
     tags:
       - nginx

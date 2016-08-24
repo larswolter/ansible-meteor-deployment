@@ -4,6 +4,8 @@ server {
   listen 80;
   root /usr/share/icinga2/classicui;
   index index.php index.html;
+  
+  server_name {{ ansible_default_ipv4.address }};
 
   access_log /var/log/nginx/icinga2-classicui-access.log;
   error_log /var/log/nginx/icinga2-classicui-error.log;

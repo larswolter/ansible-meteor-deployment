@@ -1,36 +1,46 @@
 ---
   - name: add mongodb key
-    sudo: yes
+    become: true
     apt_key: id=EA312927 keyserver=keyserver.ubuntu.com state=present
+    tags:
+      - packages
 
   - name: add mongo repo to /etc/apt/sources.list.d
-    sudo: yes
+    become: true
     copy: src=mongodb.list dest=/etc/apt/sources.list.d/mongodb.list owner=root group=root
+    tags:
+      - packages
 
   - name: update apt packages
-    sudo: yes
+    become: true
     apt: update_cache=yes cache_valid_time=3600
+    tags:
+      - packages
 
   - name: remove old MongoDB
-    sudo: yes
+    become: true
     apt: pkg={{ item }} state=absent
     with_items:
       - mongodb
       - mongodb-server
       - mongodb-clients
+    tags:
+      - packages
 
   - name: install MongoDB
-    sudo: yes
+    become: true
     apt: pkg=mongodb-org update_cache=yes
+    tags:
+      - packages
 
   - name: add mongo service
-    sudo: yes
+    become: true
     copy: src=mongodb.service dest=/etc/systemd/system/mongodb.service owner=root group=root
 
   - name: reload systemd
-    sudo: yes
+    become: true
     command: systemctl daemon-reload
 
   - name: ensure MongoDB is running
-    sudo: yes
-    service: name=mongodb state=started
+    become: true
+    service: name=mongodb state=reloaded

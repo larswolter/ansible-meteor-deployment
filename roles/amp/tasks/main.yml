@@ -1,0 +1,61 @@
+--- 
+  - name: update apt packages
+    become: true
+    apt: update_cache=yes cache_valid_time=3600
+    tags:
+      - packages
+
+  - name: install Maria DB
+    become: true
+    apt: pkg={{ item }} state=present
+    with_items: 
+      - mariadb-server 
+      - mariadb-client
+    tags:
+      - packages
+ 
+
+  - name: install PHP
+    become: true
+    apt: pkg={{ item }} state=present
+    with_items: 
+      - php7.0-fpm 
+      - php7.0-cli
+      - php7.0-common 
+      - php7.0-mysql 
+      - php7.0-curl 
+      - php7.0-gd 
+      - php7.0-intl 
+      - php-imagick 
+      - php7.0-imap 
+      - php7.0-mcrypt 
+      - php-memcache  
+      - php7.0-pspell 
+      - php7.0-recode 
+      - php7.0-tidy 
+      - php7.0-mbstring 
+      - php-gettext
+      - php-apcu
+    tags:
+      - packages
+
+  - name: copy nginx virtual host file
+    become: true
+    template: src="templates/nginx-php.j2" dest="/etc/nginx/sites-available/{{ site_name }}" owner=root group=root
+
+  - block:
+    - name: link nginx virtual host file
+      become: true
+      file: src="/etc/nginx/sites-available/{{ site_name }}" dest="/etc/nginx/sites-enabled/{{ site_name }}" state=link
+    - name: restart nginx
+      become: true
+      service: name=nginx state=reloaded
+    rescue:
+      - name: unlink failing nginx virtual host file
+        become: true
+        file: src="/etc/nginx/sites-available/{{ site_name }}" dest="/etc/nginx/sites-enabled/{{ site_name }}" state=absent
+
+  - name: restart php-fpm
+    become: true
+    service: name=php7.0-fpm state=reloaded
+

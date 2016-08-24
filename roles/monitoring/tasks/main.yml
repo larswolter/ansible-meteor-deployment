@@ -1,43 +1,51 @@
 ---
   - name: update apt packages
-    sudo: yes
+    become: true
     apt: update_cache=yes cache_valid_time=3600
+    tags:
+      - packages
 
   - name: install icinga2
-    sudo: yes
+    become: true
     apt: pkg={{ item }} state=present
     with_items:
       - fcgiwrap
       - icinga2
       - icinga2-classicui
+    tags:
+      - packages
 
   - name: copy icinga2.conf for Nginx
-    sudo: yes
-    template: src=icinga2.conf.j2 dest=/etc/nginx/conf.d/icinga2-classicui.conf owner=root group=root
+    become: true
+    template: src=icinga2.conf.j2 dest=/etc/nginx/sites-available/icinga2-classicui.conf owner=root group=root
 
   - name: link icinga2.conf for Nginx
-    sudo: yes
+    become: true
     file:
-      src: /etc/nginx/conf.d/icinga2-classicui.conf
+      src: /etc/nginx/sites-available/icinga2-classicui.conf
       dest: /etc/nginx/sites-enabled/icinga2-classicui.conf
       state: link
 
   - name: copy hosts.conf 
-    sudo: yes
+    become: true
     template: src=hosts.conf.j2 dest=/etc/icinga2/conf.d/hosts.conf owner=root group=root
 
   - name: copy services.conf 
-    sudo: yes
+    become: true
     template: src=services.conf.j2 dest=/etc/icinga2/conf.d/services.conf owner=root group=root
 
+  - name: remove old password for icinga UI
+    become: true
+    htpasswd: path=/etc/icinga2-classicui/htpasswd.users name=icingaadmin state=absent
+
   - name: generate password for icinga UI
-    sudo: yes
+    become: true
     htpasswd: path=/etc/icinga2-classicui/htpasswd.users name=icingaadmin password={{ monitoring_password }} owner=root group=www-data mode=0640    
 
   - name: ensure icinga started
-    sudo: yes
-    service: name=nginx enabled=yes state=started
+    become: true
+    service: name=icinga2 enabled=yes state=reloaded
 
   - name: ensure nginx reload
-    sudo: yes
+    become: true
     service: name=nginx state=reloaded

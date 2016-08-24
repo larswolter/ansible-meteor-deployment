@@ -1,7 +1,7 @@
 ---
 - name: Deploy meteor app
-  hosts: all
-  sudo: yes
+  hosts: meteorServer
+  become: true
   vars_prompt:
     - name: "site_name"
       prompt: "Sitename for Meteor App"
@@ -24,52 +24,52 @@
   
   tasks:
     - name: ensure user {{ app_name }} exists
-      sudo: yes
+      become: true
       user: name="{{ app_name }}" state=present createhome=no system=yes
 
     - name: ensure directories exists
-      sudo: yes
+      become: true
       file: name="{{ item }}" state=directory owner="{{ app_name }}" group="www-data"
       with_items: 
       - "{{ deploy_dir }}"
       - "{{ deploy_app_dir }}"
 
     - name: remove current running app
-      sudo: yes
+      become: true
       file: name="{{ deploy_app_dir }}/bundle" state=absent
 
     - name: copy new bundle
-      sudo: yes
+      become: true
       copy: src="{{ app_name }}.tar.gz" dest="{{ deploy_app_dir }}/{{ app_name }}.tar.gz" owner={{ app_name }} group={{ app_name }}
 
     - name: unarchive new bundle
-      sudo: yes
+      become: true
       unarchive: src="{{ deploy_app_dir }}/{{ app_name }}.tar.gz" dest="{{ deploy_app_dir }}" remote_src=yes copy=no owner={{ app_name }} group={{ app_name }}
 
     - name: install npm dependencies
-      sudo: yes
+      become: true
       npm: path="{{ deploy_app_dir }}/bundle/programs/server"
 
     - name: copy nginx virtual host file
-      sudo: yes
+      become: true
       template: src="templates/nginx.j2" dest="/etc/nginx/sites-available/{{ site_name }}" owner=root group=root
 
     - name: copy systemd conf file
-      sudo: yes
+      become: true
       template: src="templates/systemd.j2" dest="/etc/systemd/system/{{ site_name }}.service" owner=root group=root
 
     - name: reload systemd
-      sudo: yes
+      become: true
       command: systemctl daemon-reload
 
     - name: start systemd service
-      sudo: yes
+      become: true
       service: name="{{ site_name }}" state=started enabled=yes
     
     - name: link nginx virtual host file
-      sudo: yes
+      become: true
       file: src="/etc/nginx/sites-available/{{ site_name }}" dest="/etc/nginx/sites-enabled/{{ site_name }}" state=link
 
     - name: restart nginx
-      sudo: yes
+      become: true
       service: name=nginx state=reloaded
