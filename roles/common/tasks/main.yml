@@ -19,6 +19,7 @@
     with_items: 
       - curl
       - nano
+      - nfs-common
     tags:
       - packages
 
@@ -32,3 +33,8 @@
     tags:
       - firewall
 
+  - name: configure external storage
+    become: true
+    mount: name=/mnt/external src='{{ external_storage }}' fstype=nfs opts=rw,hard,tcp,intr,nolock,_netdev state=mounted
+    tags:
+      - debug

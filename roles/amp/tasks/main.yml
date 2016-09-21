@@ -11,9 +11,22 @@
     with_items: 
       - mariadb-server 
       - mariadb-client
+      - python-mysqldb
     tags:
       - packages
- 
+
+  - name: "Ensure Backup Directory"
+    become: true
+    file: path='{{ backup_location }}/{{ site_name}}' state='directory' owner='root' group='root' mode=775
+
+  - name: copy backup script to cron dir
+    become: true
+    template: src="templates/backup.sh" dest="/etc/cron.daily/mariadbBackup" owner=root group=root mode='755'
+  
+  - name: restart cron
+    become: true
+    service: name=cron state=restarted
+
 
   - name: install PHP
     become: true
@@ -25,8 +38,12 @@
       - php7.0-mysql 
       - php7.0-curl 
       - php7.0-gd 
+      - php7.0-opcache 
       - php7.0-intl 
       - php-imagick 
+      - php-zip 
+      - php-imap
+      - php-dompdf
       - php7.0-imap 
       - php7.0-mcrypt 
       - php-memcache  
@@ -34,6 +51,9 @@
       - php7.0-recode 
       - php7.0-tidy 
       - php7.0-mbstring 
+      - php7.0-xml 
+      - php7.0-xmlrpc 
+      - php7.0-xsl 
       - php-gettext
       - php-apcu
     tags:
@@ -41,7 +61,7 @@
 
   - name: copy nginx virtual host file
     become: true
-    template: src="templates/nginx-php.j2" dest="/etc/nginx/sites-available/{{ site_name }}" owner=root group=root
+    template: src="templates/nginx-php.conf" dest="/etc/nginx/sites-available/{{ site_name }}" owner=root group=root
 
   - block:
     - name: link nginx virtual host file

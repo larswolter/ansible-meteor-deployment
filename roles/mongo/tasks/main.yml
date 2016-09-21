@@ -17,7 +17,7 @@
     tags:
       - packages
 
-  - name: remove old MongoDB
+  - name: remove Ubuntu packaged MongoDB
     become: true
     apt: pkg={{ item }} state=absent
     with_items:
@@ -37,10 +37,22 @@
     become: true
     copy: src=mongodb.service dest=/etc/systemd/system/mongodb.service owner=root group=root
 
+  - name: "Ensure Backup Directory"
+    become: true
+    file: path='{{ backup_location }}/{{ site_name}}' state='directory' owner='root' group='root' mode=775
+
+  - name: copy backup script to cron dir
+    become: true
+    template: src="templates/backup.sh" dest="/etc/cron.daily/mongoBackup" owner=root group=root mode='755'
+
+  - name: restart cron
+    become: true
+    service: name=cron state=restarted
+
   - name: reload systemd
     become: true
     command: systemctl daemon-reload
 
   - name: ensure MongoDB is running
     become: true
-    service: name=mongodb state=reloaded
+    service: name=mongodb state=started

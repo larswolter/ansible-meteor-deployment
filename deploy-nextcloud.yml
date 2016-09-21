@@ -1,0 +1,63 @@
+---
+
+  # Based on https://gitlab.paragon-es.de/ansible-roles/nextcloud
+  # Copyright (c) 2015, 2016 Jürgen Haas, PARAGON Executive Services GmbH
+
+- name: Deploy Nextcloud
+  hosts: phpServer
+  become: true
+  vars:
+    webRoot: '/var/www/app' 
+    dataRoot: '/var/www/appData' 
+    nginxUser: 'www-data'
+
+  tasks:
+    - name: "Ensure App Directories"
+      file: path='{{ item }}' state='directory' owner='{{ nginxUser }}' group='{{ nginxUser }}' mode=775
+      with_items:
+        - '{{ webRoot }}'
+        - '{{ dataRoot }}'
+
+    - name: "File Modes and Ownership"
+      file: path='{{ webRoot }}' owner='{{ nginxUser }}' group='{{ nginxUser }}' mode='g+w' recurse=yes
+
+    - name: "Clone Nextcloud Git Repository"
+      git:
+        accept_hostkey: yes
+        repo: 'https://github.com/nextcloud/server.git'
+        dest: '{{ webRoot }}'
+        track_submodules: yes
+        force: yes
+        version: 'v9.0.53'
+      
+    - name: "Configuration file"
+      template: src='templates/nextcloud.php' dest='{{ webRoot }}/config/config.php' owner='{{ nginxUser }}' group='{{ nginxUser }}' mode='664'
+
+    - name: "File Modes and Ownership"
+      file: path='{{ webRoot }}' owner='{{ nginxUser }}' group='{{ nginxUser }}' mode='a-w' recurse=yes
+
+    - name: "File Modes and Ownership for config and apps"
+      file: path='{{ webRoot }}/{{ item }}' owner='{{ nginxUser }}' group='{{ nginxUser }}' mode='ug+w' recurse=yes
+      with_items:
+        - 'config'
+        - 'apps'
+
+    - name: "Setup Cron"
+      cron: name='NextCloud Cron' minute='0,15,30,45' job='php {{ webRoot }}/cron.php >/dev/null 2>&1' user='{{ nginxUser }}'
+
+    - name: "Ensure Database User"
+      become: true
+      become_user: 'root'
+      mysql_user: name=www password=root priv=*.*:ALL,GRANT state=present
+
+    - name: "Ensure Database"
+      become: true
+      become_user: 'root'
+      mysql_db: name='nextcloud' login_user='root' login_password='{{ mysql_root_password|default("root") }}' state='present'
+
+    - name: "Run Upgrade"
+      command: '{{ webRoot }}/occ upgrade --no-app-disable --no-interaction --no-warnings'
+      args:
+        chdir: '{{webRoot}}'
+      become_user: '{{ nginxUser }}'
+      ignore_errors: true

@@ -2,12 +2,6 @@
 - name: Deploy meteor app
   hosts: meteorServer
   become: true
-  vars_prompt:
-    - name: "site_name"
-      prompt: "Sitename for Meteor App"
-    - name: "port"
-      prompt: "Local port for meteor app"
-      default: "3010"
   vars:
     app_name: "meteorApp"
     deploy_dir: "/var/{{ app_name }}"
@@ -23,6 +17,16 @@
     nginx_ssl_cert: "/etc/ssl/certs/nginx.pem"
   
   tasks:
+    - name: update apt packages
+      become: true
+      apt: update_cache=yes cache_valid_time=3600
+      tags:
+        - packages
+
+    - name: System upgrade
+      command: apt-get upgrade -y -qq    
+      tags:
+        - packages
     - name: ensure user {{ app_name }} exists
       become: true
       user: name="{{ app_name }}" state=present createhome=no system=yes
@@ -64,7 +68,7 @@
 
     - name: start systemd service
       become: true
-      service: name="{{ site_name }}" state=started enabled=yes
+      service: name="{{ site_name }}" state=restarted enabled=yes
     
     - name: link nginx virtual host file
       become: true
@@ -72,4 +76,4 @@
 
     - name: restart nginx
       become: true
-      service: name=nginx state=reloaded
+      service: name=nginx state=restarted

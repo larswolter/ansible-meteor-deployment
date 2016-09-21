@@ -30,7 +30,7 @@
 
   - name: ensure nginx sites have been deleted
     become: true
-    shell: rm -rf /etc/nginx/sites-enabled/*
+    file: name="/etc/nginx/sites-enabled/default" state=absent
 
   - name: restart nginx
     become: true
