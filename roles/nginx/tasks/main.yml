@@ -7,9 +7,13 @@
 
   - name: install nginx
     become: true
-    apt: pkg=nginx state=present
+    apt: pkg={{ item }} state=present
+    with_items:
+      - nginx
+      - letsencrypt
     tags:
       - packages
+      - letsencrypt
 
   - name: copy nginx.conf
     become: true
@@ -32,8 +36,37 @@
     become: true
     file: name="/etc/nginx/sites-enabled/default" state=absent
 
-  - name: restart nginx
+  - name: stop nginx
     become: true
-    service: name=nginx state=reloaded enabled=yes
+    service: name=nginx state=stopped
+    tags:
+      - letsencrypt
+
+  - name: setup letsencrypt dir
+    become: true
+    file: name="/etc/letsencrypt" state=directory
+    tags: 
+      - letsencrypt
+
+  - name: copy letsencrypt.ini
+    become: true
+    template: src=letsencrypt.ini dest=/etc/letsencrypt/cli.ini owner=root group=root
+    tags: 
+      - letsencrypt
+
+  - name: renew letsencrypt
+    become: true
+    shell: letsencrypt -c /etc/letsencrypt/cli.ini
+    tags:
+      - letsencrypt
+    vars:
+      ssl_key: "/etc/ssl/certs/nginx.key.pem"
+      ssl_cert: "/etc/ssl/certs/nginx.pem"
+
+
+  - name: start nginx
+    become: true
+    service: name=nginx state=started enabled=yes
     tags:
       - nginx
+      - letsencrypt

@@ -17,6 +17,28 @@
     nginx_ssl_cert: "/etc/ssl/certs/nginx.pem"
   
   tasks:
+    - name: build meteor locally
+      local_action: shell meteor build /tmp/meteor-build --server "https://{{ site_name }}:443"
+      args:
+        chdir: "{{ project_dir }}"
+      when: project_dir is defined
+
+    - name: copy meteor tar
+      local_action: copy src="/tmp/meteor-build/{{ project_name }}.tar.gz" dest="./meteorApp.tar.gz"
+      when: project_dir is defined
+
+    - name: copy apk
+      local_action: copy src="/tmp/meteor-build/android/release-unsigned.apk" dest="./meteorApp.apk"
+      when: 
+        - project_dir is defined
+        - jarsigner_pass is defined
+
+    - name: sign apk
+      local_action: shell jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 meteorApp.apk {{ project_name }} -storepass {{ jarsigner_pass }}
+      when: 
+        - project_dir is defined
+        - jarsigner_pass is defined
+
     - name: update apt packages
       become: true
       apt: update_cache=yes cache_valid_time=3600

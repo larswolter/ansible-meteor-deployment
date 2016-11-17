@@ -21,4 +21,4 @@
 
   - name: install nodejs using n
     become: true
-    shell: n v4.4.7
+    shell: n v4.6.1
