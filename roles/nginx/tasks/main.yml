@@ -54,15 +54,17 @@
     tags: 
       - letsencrypt
 
-  - name: renew letsencrypt
+  - name: copy letsencrypt cron job
     become: true
-    shell: letsencrypt -c /etc/letsencrypt/cli.ini
+    template: src=le-update.sh dest=/etc/cron.monthly/letsencypt owner=root group=root mode=755
+    tags: 
+      - letsencrypt
+
+  - name: create letsencrypt certificate
+    become: true
+    command: letsencrypt -c /etc/letsencrypt/cli.ini -d {{ site_name }} -d www.{{ site_name }} creates=/etc/letsencrypt/live/{{ site_name }}/fullchain.pem
     tags:
       - letsencrypt
-    vars:
-      ssl_key: "/etc/ssl/certs/nginx.key.pem"
-      ssl_cert: "/etc/ssl/certs/nginx.pem"
-
 
   - name: start nginx
     become: true

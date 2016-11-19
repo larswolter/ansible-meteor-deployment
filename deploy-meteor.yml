@@ -71,10 +71,11 @@
     - name: copy android apk
       become: true
       copy: src="{{ app_name }}.apk" dest="{{ deploy_app_dir }}/{{ app_name }}.apk" owner={{ app_name }} group={{ app_name }}
+      failed_when: false
 
     - name: unarchive new bundle
       become: true
-      unarchive: src="{{ deploy_app_dir }}/{{ app_name }}.tar.gz" dest="{{ deploy_app_dir }}" remote_src=yes copy=no owner={{ app_name }} group={{ app_name }}
+      unarchive: src="{{ deploy_app_dir }}/{{ app_name }}.tar.gz" dest="{{ deploy_app_dir }}" remote_src=yes owner={{ app_name }} group={{ app_name }}
 
     - name: install npm dependencies
       become: true
