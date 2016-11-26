@@ -38,3 +38,11 @@
     mount: name=/mnt/external src='{{ external_storage }}' fstype=nfs opts=rw,hard,tcp,intr,nolock,_netdev state=mounted
     tags:
       - debug
+
+  - name: enable persistent logging
+    become: true
+    lineinfile: dest=/etc/systemd/journald.conf line=Storage=persistent
+
+  - name: limit log size
+    become: true
+    lineinfile: dest=/etc/systemd/journald.conf line=SystemMaxUse=500M
