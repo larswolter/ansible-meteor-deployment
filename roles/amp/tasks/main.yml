@@ -22,7 +22,8 @@
   - name: copy backup script to cron dir
     become: true
     template: src="templates/backup.sh" dest="/etc/cron.daily/mariadbBackup" owner=root group=root mode='755'
-  
+    when: external_storage is defined
+    
   - name: restart cron
     become: true
     service: name=cron state=restarted
@@ -62,6 +63,8 @@
   - name: copy nginx virtual host file
     become: true
     template: src="templates/nginx-php.conf" dest="/etc/nginx/sites-available/{{ site_name }}" owner=root group=root
+    tags:
+    - php
 
   - block:
     - name: link nginx virtual host file
@@ -74,8 +77,12 @@
       - name: unlink failing nginx virtual host file
         become: true
         file: src="/etc/nginx/sites-available/{{ site_name }}" dest="/etc/nginx/sites-enabled/{{ site_name }}" state=absent
+    tags:
+    - php
 
   - name: restart php-fpm
     become: true
     service: name=php7.0-fpm state=reloaded
+    tags:
+    - php
 

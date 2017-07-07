@@ -36,6 +36,7 @@
   - name: configure external storage
     become: true
     mount: name=/mnt/external src='{{ external_storage }}' fstype=nfs opts=rw,hard,tcp,intr,nolock,_netdev state=mounted
+    when: external_storage is defined
     tags:
       - debug
 
