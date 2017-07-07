@@ -13,8 +13,8 @@
     nginx_upstream_server: "127.0.0.1:{{ port }}"
     nginx_server_proxy_pass: "http://127.0.0.1:{{ port }}"
     nginx_server_log_dir: "{{ deploy_app_dir }}"
-    nginx_ssl_key: "/etc/ssl/certs/nginx.key.pem"
-    nginx_ssl_cert: "/etc/ssl/certs/nginx.pem"
+    nginx_ssl_key: "/etc/letsencrypt/live/{{ site_name }}/privkey.pem"
+    nginx_ssl_cert: "/etc/letsencrypt/live/{{ site_name }}/fullchain.pem"
   
   tasks:
     - name: build meteor locally
@@ -60,10 +60,6 @@
       - "{{ deploy_dir }}"
       - "{{ deploy_app_dir }}"
 
-    - name: remove current running app
-      become: true
-      file: name="{{ deploy_app_dir }}/bundle" state=absent
-
     - name: copy new bundle
       become: true
       copy: src="{{ app_name }}.tar.gz" dest="{{ deploy_app_dir }}/{{ app_name }}.tar.gz" owner={{ app_name }} group={{ app_name }}
@@ -73,9 +69,17 @@
       copy: src="{{ app_name }}.apk" dest="{{ deploy_app_dir }}/{{ app_name }}.apk" owner={{ app_name }} group={{ app_name }}
       failed_when: false
 
+    - name: remove old backup
+      become: true
+      file: name="{{ deploy_app_dir }}/bundle-old" state=absent
+
+    - name: move current running app
+      become: true
+      command: mv "{{ deploy_app_dir }}/bundle" "{{ deploy_app_dir }}/bundle-old" 
+
     - name: unarchive new bundle
       become: true
-      unarchive: src="{{ deploy_app_dir }}/{{ app_name }}.tar.gz" dest="{{ deploy_app_dir }}" remote_src=yes owner={{ app_name }} group={{ app_name }}
+      unarchive: src="{{ deploy_app_dir }}/{{ app_name }}.tar.gz" dest="{{ deploy_app_dir }}" copy=no owner={{ app_name }} group={{ app_name }}
 
     - name: install npm dependencies
       become: true
